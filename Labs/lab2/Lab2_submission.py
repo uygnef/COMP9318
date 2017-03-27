@@ -24,6 +24,11 @@ def slice_data_dim0(df, v):
     df_temp = select_data(df, 0, v)
     return remove_first_dim(df_temp)
 
+def deepcopy(list):
+    b = []
+    for i in list:
+        b.append(i)
+    return b
 
 def buc_rec_optimized(df):  # do not change the heading of the function
 
