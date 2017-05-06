@@ -43,16 +43,12 @@ def one_dim_duc(df):
             if list_val != 'ALL':
                 temp2 = deepcopy(temp)
                 temp2[j] = 'ALL'
-                if set(temp2) != {'ALL'}:
+                if temp2 not in result:
                     result.append(temp2)
-    result.append(['ALL' for _ in vals[:-1]])
-    fin_result=[]
+
     for i in result:
         i.append(vals[-1])
-        if i not in fin_result:
-            fin_result.append(i)
-
-    result = pd.DataFrame(fin_result, columns=list(df))
+    result = pd.DataFrame(result, columns=list(df))
     return result
 
 
@@ -129,6 +125,6 @@ def _v_opt_dp(mtx_x, remain_bins): #mtx_x is the index of x, we will put
         dp_matrix[remain_bins][mtx_x] = min(min_list)
         dp_index[remain_bins][mtx_x] = min_list.index(min(min_list)) + mtx_x +1
 
-input_data = read_data('./c_.txt')
+input_data = read_data('./asset/c_.txt')
 output = buc_rec_optimized(input_data)
 print(output)
