@@ -1,11 +1,28 @@
 import helper
-import operator
-import numpy as np
-import matplotlib.pyplot as plt
 import random
-from sklearn.naive_bayes import MultinomialNB
+from sklearn import tree
+import pickle
 
-def position_process(line):
+def train(data, classifier_file):
+    train_data = pre_process(data)
+    clf = {}
+    for i in train_data:
+        temp_train = [j[:-1] for j in train_data[i]]
+        temp_result = [j[-1] for j in train_data[i]]
+        clf[i] = tree.DecisionTreeClassifier()
+        clf[i].fit(temp_train, temp_result)
+    file = open(classifier_file)
+    pickle.dump(clf, file)
+
+
+def test(data, classifier_file):
+    test_data = pre_process(data)
+    for i in test_data:
+        temp_train = [j[:-1] for j in test_data[i]]
+
+
+
+def pre_process(line):
     dict = {}
     dictionary = ['AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW',
                   'P', 'B', 'CH', 'D', 'DH', 'F', 'G', 'HH', 'JH', 'K', 'L', 'M', 'N', 'NG', 'R', 'S',
@@ -19,7 +36,6 @@ def position_process(line):
         data = i.split(':')[1].split(" ")
         position = 0
         temp_list = []
-
         for i, phon in enumerate(data):
             if phon[-1] in '012':
                 temp_result = 0
@@ -43,6 +59,7 @@ def position_process(line):
 
                 temp_list.append([dict[phon], position, pre, next, temp_result])
                 position += 1
+
         if len(temp_list) not in train_data:
             train_data[len(temp_list)] = []
         train_data[len(temp_list)] += temp_list
@@ -104,37 +121,29 @@ def divide(data, seprate = 1):
     return train, test
 
 raw_data = helper.read_data("./asset/training_data.txt")
-data = position_process(raw_data)
-test_data = get_data(raw_data)
-train, test = divide(data)
-
-clf = {}
-for i in train:
+for i in raw_data:
     print(i)
-    clf[i] = MultinomialNB()
-    temp_train = [j[:-1] for j in train[i]]
-    temp_result = [j[-1] for j in train[i]]
-    clf[i].fit(temp_train, temp_result)
-
+exit(1)
 true = 0
 false = 0
 
+for a in test_data:
+    for i in test_data[a]:
+        predict = []
+        for word in i:
+            predict.append( clf[a].predict_proba([word[:-1]])[0][-1])
+        pred = predict.index(max(predict))
 
-for i in test_data:
-    predict = []
-    for word in i:
-           # predict.append(
-        predict.append( clf[len(i)].predict_proba([word[:-1]])[0][-1])
-           #[-1])
-    print(predict)
-    pred = predict.index(max(predict))
-    print(pred)
-    print(i)
-    if i[pred][-1] != 1:
-        false += 1
-    else:
-        true +=1
-print(true/(true + false))
+        if i[pred][-1] != 1:
+            # print(predict)
+            # print(i)
+            false += 1
+        else:
+            true +=1
+    print(a, true/(true + false), true+false)
+
+    print(len(train[a]), len(test_data[a]))
+   # print(clf[4].tree_.__getstate__())
 # a = []
 # b = []
 # for i in range(true):
