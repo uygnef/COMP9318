@@ -22,8 +22,6 @@ def test(data, classifier_file):# do not change the heading of the function
     pass # **replace** this line with your code
 
 
-def str_phon_to_int(phons):
-    return int(dic[phons])
 
 
 def pre_process(line):
