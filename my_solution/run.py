@@ -5,7 +5,7 @@ import nltk
 
 
 
-training_data = helper.read_data('./asset/train.txt')
+training_data = helper.read_data('./asset/test_words.txt')
 classifier_path = './asset/classifier.dat'
 
 train(training_data, classifier_path)
@@ -34,6 +34,6 @@ for i in range(len(result)):
         a[result[i]] += 1
     la[result[i]] += 1
 for i in a:
-    print(i, a[i]/la[i], la[i])
+    print(i, '\t', a[i]/la[i], '\t', la[i])
 from sklearn.metrics import f1_score
 print(f1_score(result, prediction, average='macro'))

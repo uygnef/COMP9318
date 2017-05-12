@@ -14,7 +14,10 @@ def train(data, classifier_file):
         # if i in [3,4]:
         #     clf[i] = SVC(probability = True)
         # else:
-        clf[i] = tree.DecisionTreeClassifier()
+        class_weight = {}
+        class_weight[0] = 1
+        class_weight[1] = 9
+        clf[i] = tree.DecisionTreeClassifier(class_weight=class_weight, max_depth=14)
         clf[i].fit(temp_train, temp_result)
     file = open(classifier_file, 'wb')
     pickle.dump((clf, index_file), file)
@@ -30,6 +33,11 @@ def test(data, classifier_file):
         predict = []
         for syllable in word:
             predict.append(clf[index].predict_proba([syllable])[0][-1])
+        # if len(predict) == 4:
+        #     predict[3] *= 30
+        #     predict[2] *= 4
+        # if len(predict) == 3:
+        #     predict[2] *= 5
         pred = predict.index(max(predict))
         result.append(pred + 1)
     return result
