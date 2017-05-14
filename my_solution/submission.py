@@ -4,6 +4,42 @@ from sklearn.svm import SVC
 import pickle
 import nltk
 
+class word:
+    def __init__(self, str):
+        self.name, self.phonem = str.split(':')
+        self.syllables = []
+        for i in self.phonem.split(" "):
+            self.syllables.append(syllbale(i))
+        self.len = 0
+        self.result = 0
+        temp = 0
+        for i in self.syllables:
+            if i.is_vowel:
+                self.len += 1
+                if i.stress == 1:
+                    self.result = temp + 1
+                temp += 1
+        self.pho_len = len(self.syllables)
+
+    def __repr__(self):
+        string = self.name + ":" + str(self.pho_len) +":"
+        for i in self.syllables:
+            string += i.name + " "
+            if i.is_vowel:
+                string += str(i.stress) + " "
+        return string + ":"+str(self.result)+"/"+str(self.len)
+
+
+class syllbale:
+    def __init__(self, str):
+        self.is_vowel = False
+        self.stress = None
+        self.name = str
+        if str[-1] in '012':
+            self.is_vowel = True
+            self.stress = int(str[-1])
+            self.name = str[:-1]
+
 
 def train(data, classifier_file):
     train_data, index_file = pre_process(data)
@@ -92,16 +128,16 @@ def pre_process(line):
     # feature calibration
     for i in stress_occ:
         stress_occ[i] = stress_occ[i] / total_occ[i]
-        print(i,end=' ')
-    print()
+    #    print(i,end=' ')
+    #print()
     for i in pre_occ:
         pre_occ[i] = pre_occ[i] / total_occ[i]
-        print(i,end=' ')
-    print()
+    #    print(i,end=' ')
+   # print()
 
     for i in next_occ:
         next_occ[i] = next_occ[i] / total_occ[i]
-        print(i,end=' ')
+    #   print(i,end=' ')
 
 
     for i in line:
