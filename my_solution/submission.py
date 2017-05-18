@@ -2,44 +2,7 @@ import helper
 from sklearn import tree
 from sklearn.svm import SVC
 import pickle
-import nltk
-
-class word:
-    def __init__(self, str):
-        self.name, self.phonem = str.split(':')
-        self.syllables = []
-        for i in self.phonem.split(" "):
-            self.syllables.append(syllbale(i))
-        self.len = 0
-        self.result = 0
-        temp = 0
-        for i in self.syllables:
-            if i.is_vowel:
-                self.len += 1
-                if i.stress == 1:
-                    self.result = temp + 1
-                temp += 1
-        self.pho_len = len(self.syllables)
-
-    def __repr__(self):
-        string = self.name + ":" + str(self.pho_len) +":"
-        for i in self.syllables:
-            string += i.name + " "
-            if i.is_vowel:
-                string += str(i.stress) + " "
-        return string + ":"+str(self.result)+"/"+str(self.len)
-
-
-class syllbale:
-    def __init__(self, str):
-        self.is_vowel = False
-        self.stress = None
-        self.name = str
-        if str[-1] in '012':
-            self.is_vowel = True
-            self.stress = int(str[-1])
-            self.name = str[:-1]
-
+from nltk.stem.lancaster import LancasterStemmer
 
 def train(data, classifier_file):
     train_data, index_file = pre_process(data)
@@ -52,8 +15,8 @@ def train(data, classifier_file):
         # else:
         class_weight = {}
         class_weight[0] = 1
-        class_weight[1] = 9
-        clf[i] = tree.DecisionTreeClassifier(class_weight=class_weight, max_depth=14)
+        class_weight[1] = 5
+        clf[i] = tree.DecisionTreeClassifier(class_weight=class_weight, max_depth=18)
         clf[i].fit(temp_train, temp_result)
     file = open(classifier_file, 'wb')
     pickle.dump((clf, index_file), file)
@@ -107,11 +70,18 @@ def pre_process(line):
     total_occ = {}
     pre_occ = {}
     next_occ = {}
+
+    prefix = {}
+    suffix = {}
     for i in line:
         phons = i.split(':')[1].split(" ")
+        word = i.split(':')[0]
         pre = 'PRE'
         add_dict('PRE', total_occ)
         add_dict('NEXT', total_occ)
+        pref, suff = get_pre_suff(word)
+        add_dict(pref, prefix)
+        add_dict(suff, suffix)
         for index, j in enumerate(phons):
             if j[-1] in '012':
                 if j[-1] == '1':
@@ -146,7 +116,8 @@ def pre_process(line):
         data = i.split(':')[1].split(" ")
         position = 0
         temp_list = []
-
+        word = i.split(':')[0]
+        pref, suff = get_pre_suff(word)
         for i, phon in enumerate(data):
             if phon[-1] in '012':
                 temp_result = 0
@@ -155,28 +126,40 @@ def pre_process(line):
                 phon = phon[:-1]
                 if i == 0:
                     pre = 'PRE'
+                elif data[i-1] in  ['AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW']:
+                    pre = 'PRE'
                 else:
                     pre = clear_phon(data[i - 1])
 
                 if i == len(data) - 1:
                     next = 'NEXT'
+                elif data[i+1] in ['AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW']:
+                    next = 'NEXT'
                 else:
                     next = clear_phon(data[i + 1])
-                    #               Phoneme name   No of vowel  pre Phoneme   next Phoneme      result
                 if pre not in pre_occ:
                     pre_occ[pre] = 0
                 if next not in next_occ:
                     next_occ[next] = 0
                 if phon not in stress_occ:
                     stress_occ[phon] = 0
-                temp_list.append([stress_occ[phon], position, pre_occ[pre], next_occ[next], temp_result])
+                    #               Phoneme name   No of vowel  pre Phoneme   next Phoneme                result
+                temp_list.append([stress_occ[phon], position, pre_occ[pre], next_occ[next], prefix[pref], suffix[suff], temp_result])
                 position += 1
 
         if len(temp_list) not in train_data:
             train_data[len(temp_list)] = []
         train_data[len(temp_list)] += temp_list
-    index_list = [stress_occ, pre_occ, next_occ]
+    index_list = [stress_occ, pre_occ, next_occ, prefix, suffix]
     return train_data, index_list
+
+def get_pre_suff(word):
+    st = LancasterStemmer()
+    new_word = st.stem(word)
+    a = (word.lower()).split(new_word)
+    if(len(a) < 2):
+        a = ['', '']
+    return a[0], a[1]
 
 
 def get_data(line, index_list):
@@ -192,11 +175,18 @@ def get_data(line, index_list):
     stress_occ = index_list[0]
     pre_occ = index_list[1]
     next_occ = index_list[2]
+    prefix = index_list[3]
+    suffix = index_list[4]
     for i in line:
         # a = nltk.pos_tag([i.split(':')[0]])[0][-1]
         # tag = tag_list.get(a, 0)
 
         data = i.split(':')[1].split(" ")
+        pref, suf = get_pre_suff(i.split(':')[0])
+        if(pref not in prefix):
+            pref = ''
+        if(suf not in suffix):
+            suf = ''
         temp_list = []
         position = 0
 
@@ -215,7 +205,7 @@ def get_data(line, index_list):
                 else:
                     next = next_occ[data[i + 1]]
 
-                temp_list.append([stress_occ[phon], position, pre, next])
+                temp_list.append([stress_occ[phon], position, pre, next, prefix[pref], suffix[suf]])
                 position += 1
         train_data.append(temp_list)
     return train_data
