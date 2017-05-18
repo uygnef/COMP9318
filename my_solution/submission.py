@@ -4,18 +4,18 @@ from sklearn.svm import SVC
 import pickle
 import nltk
 
-class word:
+class Word:
     def __init__(self, str):
         self.name, self.phonem = str.split(':')
         self.syllables = []
         for i in self.phonem.split(" "):
             self.syllables.append(syllbale(i))
-        self.len = 0
+        self.length = 0
         self.result = 0
         temp = 0
         for i in self.syllables:
             if i.is_vowel:
-                self.len += 1
+                self.length += 1
                 if i.stress == 1:
                     self.result = temp + 1
                 temp += 1
@@ -93,89 +93,30 @@ def clear_phon(phone):
 
 
 def pre_process(line):
-    # dict = {}
-    # dictionary = ['AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW',
-    #               'P', 'B', 'CH', 'D', 'DH', 'F', 'G', 'HH', 'JH', 'K', 'L', 'M', 'N', 'NG', 'R', 'S',
-    #               'SH', 'T', 'TH', 'V', 'W', 'Y', 'Z', 'ZH']
-    # # pre None = 39 next none = 40
-    # # tags = {'NN':1, 'NNP':2, 'NNS':3, 'JJ':4, 'RB':5, 'IN':6, 'DT':7, 'JJR':8, 'VB':9}
-    # for i, word in enumerate(dictionary):
-    #     dict[word] = i
+    dict = {}
+    dictionary = ['AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW',
+                  'P', 'B', 'CH', 'D', 'DH', 'F', 'G', 'HH', 'JH', 'K', 'L', 'M', 'N', 'NG', 'R', 'S',
+                  'SH', 'T', 'TH', 'V', 'W', 'Y', 'Z', 'ZH']
+    # pre None = 39 next none = 40
+    # tags = {'NN':1, 'NNP':2, 'NNS':3, 'JJ':4, 'RB':5, 'IN':6, 'DT':7, 'JJR':8, 'VB':9}
+    for i, word in enumerate(dictionary):
+        dict[word] = i
 
+    _train_data = {}
     train_data = {}
-    stress_occ = {}
-    total_occ = {}
-    pre_occ = {}
-    next_occ = {}
+
+    for i in [2,3,4]:
+        _train_data[i] = []
+        train_data[i] = []
     for i in line:
-        phons = i.split(':')[1].split(" ")
-        pre = 'PRE'
-        add_dict('PRE', total_occ)
-        add_dict('NEXT', total_occ)
-        for index, j in enumerate(phons):
-            if j[-1] in '012':
-                if j[-1] == '1':
-                    add_dict(j[:-1], stress_occ)
-                    add_dict(pre, pre_occ)
-                    if index == len(phons) - 1:
-                        add_dict('NEXT', next_occ)
-                    else:
-                        add_dict(clear_phon(phons[index + 1]), next_occ)
-                j = j[:-1]
-            add_dict(j, total_occ)
-            pre = j
+        temp = Word(i)
+        _train_data[temp.length].append(temp)
 
-    # feature calibration
-    for i in stress_occ:
-        stress_occ[i] = stress_occ[i] / total_occ[i]
-    #    print(i,end=' ')
-    #print()
-    for i in pre_occ:
-        pre_occ[i] = pre_occ[i] / total_occ[i]
-    #    print(i,end=' ')
-   # print()
-
-    for i in next_occ:
-        next_occ[i] = next_occ[i] / total_occ[i]
-    #   print(i,end=' ')
+    for i in _train_data:
+        for j in _train_data[i]:
+            train_data[i].append(j.)
 
 
-    for i in line:
-        # a = nltk.pos_tag([i.split(':')[0]])[0][-1]
-        # tag = tags.get(a, 0)
-        data = i.split(':')[1].split(" ")
-        position = 0
-        temp_list = []
-
-        for i, phon in enumerate(data):
-            if phon[-1] in '012':
-                temp_result = 0
-                if phon[-1] == '1':
-                    temp_result = 1
-                phon = phon[:-1]
-                if i == 0:
-                    pre = 'PRE'
-                else:
-                    pre = clear_phon(data[i - 1])
-
-                if i == len(data) - 1:
-                    next = 'NEXT'
-                else:
-                    next = clear_phon(data[i + 1])
-                    #               Phoneme name   No of vowel  pre Phoneme   next Phoneme      result
-                if pre not in pre_occ:
-                    pre_occ[pre] = 0
-                if next not in next_occ:
-                    next_occ[next] = 0
-                if phon not in stress_occ:
-                    stress_occ[phon] = 0
-                temp_list.append([stress_occ[phon], position, pre_occ[pre], next_occ[next], temp_result])
-                position += 1
-
-        if len(temp_list) not in train_data:
-            train_data[len(temp_list)] = []
-        train_data[len(temp_list)] += temp_list
-    index_list = [stress_occ, pre_occ, next_occ]
     return train_data, index_list
 
 
