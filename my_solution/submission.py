@@ -4,41 +4,41 @@ from sklearn.svm import SVC
 import pickle
 import nltk
 
-class word:
-    def __init__(self, str):
-        self.name, self.phonem = str.split(':')
-        self.syllables = []
-        for i in self.phonem.split(" "):
-            self.syllables.append(syllbale(i))
-        self.len = 0
-        self.result = 0
-        temp = 0
-        for i in self.syllables:
-            if i.is_vowel:
-                self.len += 1
-                if i.stress == 1:
-                    self.result = temp + 1
-                temp += 1
-        self.pho_len = len(self.syllables)
-
-    def __repr__(self):
-        string = self.name + ":" + str(self.pho_len) +":"
-        for i in self.syllables:
-            string += i.name + " "
-            if i.is_vowel:
-                string += str(i.stress) + " "
-        return string + ":"+str(self.result)+"/"+str(self.len)
-
-
-class syllbale:
-    def __init__(self, str):
-        self.is_vowel = False
-        self.stress = None
-        self.name = str
-        if str[-1] in '012':
-            self.is_vowel = True
-            self.stress = int(str[-1])
-            self.name = str[:-1]
+# class word:
+#     def __init__(self, str):
+#         self.name, self.phonem = str.split(':')
+#         self.syllables = []
+#         for i in self.phonem.split(" "):
+#             self.syllables.append(syllbale(i))
+#         self.len = 0
+#         self.result = 0
+#         temp = 0
+#         for i in self.syllables:
+#             if i.is_vowel:
+#                 self.len += 1
+#                 if i.stress == 1:
+#                     self.result = temp + 1
+#                 temp += 1
+#         self.pho_len = len(self.syllables)
+#
+#     def __repr__(self):
+#         string = self.name + ":" + str(self.pho_len) +":"
+#         for i in self.syllables:
+#             string += i.name + " "
+#             if i.is_vowel:
+#                 string += str(i.stress) + " "
+#         return string + ":"+str(self.result)+"/"+str(self.len)
+#
+#
+# class syllbale:
+#     def __init__(self, str):
+#         self.is_vowel = False
+#         self.stress = None
+#         self.name = str
+#         if str[-1] in '012':
+#             self.is_vowel = True
+#             self.stress = int(str[-1])
+#             self.name = str[:-1]
 
 
 def train(data, classifier_file):
@@ -47,13 +47,15 @@ def train(data, classifier_file):
     for i in [2, 3, 4]:
         temp_train = [j[:-1] for j in train_data[i]]
         temp_result = [j[-1] for j in train_data[i]]
+        print(train_data[i],"aas")
         # if i in [3,4]:
         #     clf[i] = SVC(probability = True)
         # else:
         class_weight = {}
-        class_weight[0] = 1
-        class_weight[1] = 9
-        clf[i] = tree.DecisionTreeClassifier(class_weight=class_weight, max_depth=14)
+        if i > 2:
+            class_weight[i] = i
+
+        clf[i] = tree.DecisionTreeClassifier(class_weight=class_weight, max_depth=35)
         clf[i].fit(temp_train, temp_result)
     file = open(classifier_file, 'wb')
     pickle.dump((clf, index_file), file)
@@ -65,17 +67,16 @@ def test(data, classifier_file):
     test_data = get_data(data, index_file)
     result = []
     for word in test_data:
-        index = len(word)
-        predict = []
-        for syllable in word:
-            predict.append(clf[index].predict_proba([syllable])[0][-1])
+        index = (len(word))/4
+        res = clf[int(index)].predict([word])
         # if len(predict) == 4:
         #     predict[3] *= 30
         #     predict[2] *= 4
         # if len(predict) == 3:
         #     predict[2] *= 5
-        pred = predict.index(max(predict))
-        result.append(pred + 1)
+
+       # pred = predict.index(max(predict))
+        result.append(res)
     return result
 
 
@@ -93,14 +94,14 @@ def clear_phon(phone):
 
 
 def pre_process(line):
-    # dict = {}
-    # dictionary = ['AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW',
-    #               'P', 'B', 'CH', 'D', 'DH', 'F', 'G', 'HH', 'JH', 'K', 'L', 'M', 'N', 'NG', 'R', 'S',
-    #               'SH', 'T', 'TH', 'V', 'W', 'Y', 'Z', 'ZH']
+    dict = {}
+    dictionary = ['AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW',
+                  'P', 'B', 'CH', 'D', 'DH', 'F', 'G', 'HH', 'JH', 'K', 'L', 'M', 'N', 'NG', 'R', 'S',
+                  'SH', 'T', 'TH', 'V', 'W', 'Y', 'Z', 'ZH']
     # # pre None = 39 next none = 40
     # # tags = {'NN':1, 'NNP':2, 'NNS':3, 'JJ':4, 'RB':5, 'IN':6, 'DT':7, 'JJR':8, 'VB':9}
-    # for i, word in enumerate(dictionary):
-    #     dict[word] = i
+    for i, word in enumerate(dictionary):
+        dict[word] = i
 
     train_data = {}
     stress_occ = {}
@@ -112,6 +113,7 @@ def pre_process(line):
         pre = 'PRE'
         add_dict('PRE', total_occ)
         add_dict('NEXT', total_occ)
+
         for index, j in enumerate(phons):
             if j[-1] in '012':
                 if j[-1] == '1':
@@ -146,12 +148,11 @@ def pre_process(line):
         data = i.split(':')[1].split(" ")
         position = 0
         temp_list = []
-
+        res = 0
         for i, phon in enumerate(data):
             if phon[-1] in '012':
-                temp_result = 0
                 if phon[-1] == '1':
-                    temp_result = 1
+                    res = position + 1
                 phon = phon[:-1]
                 if i == 0:
                     pre = 'PRE'
@@ -169,12 +170,20 @@ def pre_process(line):
                     next_occ[next] = 0
                 if phon not in stress_occ:
                     stress_occ[phon] = 0
-                temp_list.append([stress_occ[phon], position, pre_occ[pre], next_occ[next], temp_result])
+                temp_list += [stress_occ[phon], position, pre_occ[pre], next_occ[next]]
                 position += 1
 
-        if len(temp_list) not in train_data:
-            train_data[len(temp_list)] = []
-        train_data[len(temp_list)] += temp_list
+        if position not in train_data:
+            train_data[position] = []
+        # if len(temp_list) == 4 and temp_list[3][-1] == 1:
+        #     for _ in range(10):
+        #         train_data[len(temp_list)] += temp_list
+        # if len(temp_list) == 3 and temp_list[2][-1] == 1:
+        #     for _ in range(5):
+        #         train_data[len(temp_list)] += temp_list
+
+        temp_list.append(res)
+        train_data[position] += [temp_list]
     index_list = [stress_occ, pre_occ, next_occ]
     return train_data, index_list
 
@@ -215,7 +224,7 @@ def get_data(line, index_list):
                 else:
                     next = next_occ[data[i + 1]]
 
-                temp_list.append([stress_occ[phon], position, pre, next])
+                temp_list += [stress_occ[phon], position, pre, next]
                 position += 1
         train_data.append(temp_list)
     return train_data
