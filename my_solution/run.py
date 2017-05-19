@@ -1,8 +1,5 @@
-from submission import *
 import convert_test
-import helper
-import nltk
-
+from submission import *
 
 
 training_data = helper.read_data('./asset/test_words.txt')

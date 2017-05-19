@@ -8,17 +8,16 @@ class Word:
     def __init__(self, str):
         self.name, self.phonem = str.split(':')
         self.syllables = []
+        self.tag = nltk.pos_tag(self.name)[1]
         for i in self.phonem.split(" "):
             self.syllables.append(syllbale(i))
         self.length = 0
         self.result = 0
-        temp = 0
         for i in self.syllables:
             if i.is_vowel:
                 self.length += 1
                 if i.stress == 1:
-                    self.result = temp + 1
-                temp += 1
+                    self.result = self.length
         self.pho_len = len(self.syllables)
 
     def __repr__(self):
@@ -27,7 +26,7 @@ class Word:
             string += i.name + " "
             if i.is_vowel:
                 string += str(i.stress) + " "
-        return string + ":"+str(self.result)+"/"+str(self.len)
+        return string + ":"+str(self.result)+"/"+str(self.length)
 
 
 class syllbale:
@@ -40,7 +39,6 @@ class syllbale:
             self.stress = int(str[-1])
             self.name = str[:-1]
 
-
 def train(data, classifier_file):
     train_data, index_file = pre_process(data)
     clf = {}
@@ -48,7 +46,7 @@ def train(data, classifier_file):
         temp_train = [j[:-1] for j in train_data[i]]
         temp_result = [j[-1] for j in train_data[i]]
         # if i in [3,4]:
-        #     clf[i] = SVC(probability = True)
+            #     clf[i] = SVC(probability = True)
         # else:
         class_weight = {}
         class_weight[0] = 1
