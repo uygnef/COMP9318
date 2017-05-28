@@ -4,6 +4,11 @@ from sklearn.svm import SVC
 import pickle
 from nltk.stem.lancaster import LancasterStemmer
 
+
+
+# add suffix and prefix
+
+
 def train(data, classifier_file):
     train_data, index_file = pre_process(data)
     clf = {}
